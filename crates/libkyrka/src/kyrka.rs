@@ -36,17 +36,6 @@ pub struct KyrkaConfig {
     cathedral_config: Option<crate::cathedral::CathedralConfig>,
 }
 
-impl Default for KyrkaConfig {
-    fn default() -> Self {
-        KyrkaConfig {
-            shroud: false,
-            mtu: 1422,
-            secret: None,
-            cathedral_config: None,
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct KyrkaConfigBuilder {
     /// Whether to shroud the transmitted data or not.
