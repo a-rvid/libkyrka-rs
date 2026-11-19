@@ -2,8 +2,6 @@ use crate::error::KyrkaError;
 use crate::cathedral::CathedralConfig;
 use std::error::Error;
 use std::ffi::c_void;
-use std::fs;
-use std::path::PathBuf;
 use std::ptr::NonNull;
 
 pub(crate) type SendFn = dyn FnMut(&[u8], u64) + Send;
@@ -14,6 +12,10 @@ pub struct Kyrka {
     send_fn: Option<Box<SendFn>>,
 }
 
+/// Configuration for a KYRKA context.
+/// 
+/// Use `KyrkaConfigBuilder` to construct an instance of this configuration.
+/// Alternatively you can load the configuration directly into a `Kyrka` context using `Kyrka::load()`.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KyrkaConfig {
     /// Wether to shroud the transmitted data or not
@@ -45,24 +47,19 @@ impl Default for KyrkaConfig {
     }
 }
 
+#[derive(Default)]
 pub struct KyrkaConfigBuilder {
+    /// Whether to shroud the transmitted data or not.
     shroud: bool,
+    /// Maximum transmission unit variable. Recommended: `1422` (bytes)
     mtu: Option<u16>,
+    /// Shared secret for the context, if any.
     secret: Option<[u8; 32]>,
+    /// Cathedral configuration for the context, if any.
     cathedral_config: Option<CathedralConfig>,
 }
 
-impl Default for KyrkaConfigBuilder {
-    fn default() -> Self {
-        KyrkaConfigBuilder {
-            shroud: false,
-            mtu: None,
-            secret: None,
-            cathedral_config: None,
-        }
-    }
-}
-
+/// Builder for `KyrkaConfig` to facilitate configuration setup.
 impl KyrkaConfigBuilder {
     /// Enable or disable shroud
     pub fn shroud(mut self, shroud: bool) -> Self {
@@ -88,6 +85,9 @@ impl KyrkaConfigBuilder {
         self
     }
 
+    /// Build the `KyrkaConfig` from the builder.
+    ///
+    /// Returns an error if required fields are not set.
     pub fn build(self) -> Result<KyrkaConfig, Box<dyn Error>> {
         if self.mtu.is_none() {
             return Err("MTU must be set. Use `mtu()` on the builder to set it.".into());
@@ -107,6 +107,7 @@ impl KyrkaConfigBuilder {
 }
 
 impl Kyrka {
+    /// Obtain a builder for `KyrkaConfig` to construct configuration.
     pub fn builder() -> KyrkaConfigBuilder {
         KyrkaConfigBuilder::default()
     }
@@ -124,8 +125,10 @@ impl Kyrka {
         })
     }
 
+    /// Load a KYRKA context and configure it based on the provided `KyrkaConfig`.
     pub fn load(config: KyrkaConfig) -> Result<Self, Box<dyn Error>> {
         let mut ctx = Self::new()?;
+        ctx.set_mtu(config.mtu)?;
         if config.shroud {
             ctx.enable_shroud()?;
         }
@@ -152,13 +155,27 @@ impl Kyrka {
         KyrkaError::from_code(unsafe { libkyrka_sys::kyrka_last_error(self.raw.as_ptr()) })
     }
 
-    pub fn cathedral_config(&mut self, config: CathedralConfig) -> Result<(), KyrkaError> {
+    /// Configure the cathedral for the context.
+    ///
+    /// This sets up the cathedral with the provided configuration.
+    pub fn cathedral_config(&mut self, _config: CathedralConfig) -> Result<(), KyrkaError> {
         todo!("Implement cathedral configuration loading")
     }
 
     /// Enable shroud on a context, cannot be turned off once enabled.
     pub fn enable_shroud(&mut self) -> Result<(), KyrkaError> {
         let ret = unsafe { libkyrka_sys::kyrka_shroud_enable(self.raw.as_ptr()) as i32 };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
+    }
+
+    /// Set the Maximum Transmission Unit (MTU) size for the context.
+    ///
+    /// This defines the largest packet size that can be transmitted over the tunnel.
+    pub fn set_mtu(&mut self, mtu: u16) -> Result<(), KyrkaError> {
+        let ret = unsafe { libkyrka_sys::kyrka_mtu_size(self.raw.as_ptr(), mtu) as i32 };
         if ret != 0 {
             return Err(self.last_error());
         }

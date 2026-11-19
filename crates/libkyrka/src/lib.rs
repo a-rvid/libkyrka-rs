@@ -10,11 +10,7 @@
 #[cfg(not(any(target_os = "linux", target_os = "openbsd")))]
 compile_error!("Unsupported kernel. Only Linux and OpenBSD are supported by libkyrka.");
 
-use std::error::Error;
-use std::ffi::{CStr, c_void};
-use std::fmt;
-use std::path::PathBuf;
-use std::ptr::NonNull;
+use std::ffi::CStr;
 /// Provides configuration forcathedrals
 ///
 /// Cathedrals manage the connection to a server that handles peer discovery, traffic relay and key distribution
@@ -27,7 +23,6 @@ pub mod kyrka;
 ///
 /// use libkyrka::prelude::*;
 pub mod prelude;
-use error::KyrkaError;
 
 /// Returns the libkyrka its version string, including the build date and
 /// the revision it was compiled from.
