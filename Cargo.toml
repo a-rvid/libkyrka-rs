@@ -1,5 +1,6 @@
 [package]
 version = "0.1.0"
+exclude = ["binds_example.rs"] 
 
 name = "libkyrka"
 description = "Rust bindings for the libkyrka C library created by jorisvink, which is a networking cryptography library."
