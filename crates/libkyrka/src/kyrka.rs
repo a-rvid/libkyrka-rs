@@ -207,17 +207,6 @@ impl Kyrka {
         }
         Ok(())
     }
-
-    /// Initialize a new `Kyrka` context that will represent a single sanctum tunnel.
-    ///
-    /// `shroud` boolean indicating whether to enable shroud on the context.
-    pub fn init(shroud: bool) -> Result<Kyrka, Box<dyn Error>> {
-        let mut kyrka = Self::new()?;
-        if shroud {
-            kyrka.enable_shroud()?;
-        }
-        Ok(kyrka)
-    }
 }
 
 impl Drop for Kyrka {
