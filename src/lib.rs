@@ -17,10 +17,18 @@ use std::ptr::NonNull;
 use std::error::Error;
 #[allow(dead_code, non_camel_case_types, non_upper_case_globals)]
 pub(crate) mod ffi;
-pub mod error;
-pub mod cathedral;
-pub mod kyrka;
+/// Prelude module for commonly used items. 
+/// 
+/// use libkyrka::prelude::*;
 pub mod prelude;
+/// Error handling for libkyrka.
+pub mod error;
+/// Provides configuration forcathedrals 
+/// 
+/// Cathedrals manage the connection to a server that handles peer discovery, traffic relay and key distribution
+pub mod cathedral;
+/// Provides the context and all user-facing functionality for managing the application.
+pub mod kyrka;
 use error::KyrkaError;
 
 /// Returns the libkyrka its version string, including the build date and

@@ -5,6 +5,8 @@ use crate::ffi;
 use crate::error::KyrkaError;
 
 pub(crate) type SendFn = dyn FnMut(&[u8], u64) + Send;
+
+/// A structure containing all data needed to run the application.
 pub struct Kyrka {
     raw: NonNull<ffi::KYRKA>,
     send_fn: Option<Box<SendFn>>,
@@ -32,7 +34,7 @@ impl Kyrka {
     pub fn enable_shroud(&mut self) -> Result<(), KyrkaError> {
         let ret = unsafe { ffi::kyrka_shroud_enable(self.raw.as_ptr()) as i32 };
         if ret != 0 {
-            return Err(self.last_error()?);
+            return Err(self.last_error());
         }
         Ok(())
     }
@@ -44,7 +46,7 @@ impl Kyrka {
     pub fn secret_load(&mut self, secret: [u8; 32]) -> Result<(), KyrkaError> {
         let ret = unsafe { ffi::kyrka_secret_load(self.raw.as_ptr(), secret.as_ptr() as *const c_void, secret.len()) as i32 };
         if ret != 0 {
-            self.last_error()?;
+            return Err(self.last_error());
         }
         Ok(())
     }
@@ -57,7 +59,7 @@ impl Kyrka {
     pub fn cathedral_secret_load(&mut self, secret: [u8; 32]) -> Result<(), KyrkaError> {
         let ret = unsafe { ffi::kyrka_cathedral_secret_load(self.raw.as_ptr(), secret.as_ptr() as *const c_void, secret.len()) as i32 };
         if ret != 0 {
-            self.last_error()?;
+            return Err(self.last_error());
         }
         Ok(())
     }
