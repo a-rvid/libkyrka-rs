@@ -1,0 +1,1 @@
+Raw FFI bindings for the jorisvink library. You are probably looking for the safe library, **[libkyrka](https://crates.io/crates/serde)**

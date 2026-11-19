@@ -1,0 +1,26 @@
+[package]
+version = "0.1.0"
+
+name = "libkyrka-sys"
+description = "Raw bindings for the libkyrka C library created by jorisvink, which is a networking cryptography library."
+homepage = "https://sanctorum.se/"
+repository = "https://github.com/a-rvid/libkyrka-rs"
+categories = ["api-bindings"]
+keywords = ["ffi", "bindings"]
+documentation = "https://docs.rs/libkyrka-sys"
+readme = "README.md"
+links = "libkyrka"
+edition = "2024"
+license = "ISC"
+
+[lints.rust]
+unsafe_code = "allow"
+dead_code = "allow"
+non_camel_case_types = "allow"
+non_upper_case_globals = "allow"
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.73"
+pkg-config = "0.3"

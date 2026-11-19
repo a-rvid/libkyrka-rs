@@ -1,6 +1,5 @@
 use std::{ffi::CString, path::PathBuf};
 use std::os::unix::ffi::OsStrExt;
-use crate::ffi;
 
 /// Configuration structure for cathedrals
 #[derive(Debug, Clone)]
@@ -42,20 +41,20 @@ pub struct CathedralCfg {
 }
 
 pub(crate) struct FfiCathedralCfg {
-    raw: ffi::kyrka_cathedral_cfg,
+    raw: libkyrka_sys::kyrka_cathedral_cfg,
     _kek: Option<CString>,
     _cosk: Option<CString>,
     _secret: Option<CString>,
 }
 
 impl FfiCathedralCfg {
-    pub(crate) fn as_mut_ptr(&mut self) -> *mut ffi::kyrka_cathedral_cfg {
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut libkyrka_sys::kyrka_cathedral_cfg {
         &mut self.raw
     }
 }
 
 impl CathedralCfg {
-    pub(crate) fn to_ffi(&self, udata: *mut std::ffi::c_void, send: unsafe extern "C" fn(*mut ffi::kyrka_packet, u64, *mut std::ffi::c_void)) -> Result<FfiCathedralCfg, std::ffi::NulError> {
+    pub(crate) fn to_ffi(&self, udata: *mut std::ffi::c_void, send: unsafe extern "C" fn(*mut libkyrka_sys::kyrka_packet, u64, *mut std::ffi::c_void)) -> Result<FfiCathedralCfg, std::ffi::NulError> {
         let kek = self.kek.as_ref()
             .map(|path| CString::new(path.as_os_str().as_bytes()))
             .transpose()?;
@@ -65,7 +64,7 @@ impl CathedralCfg {
         let secret = self.secret.as_ref()
             .map(|path| CString::new(path.as_os_str().as_bytes()))
             .transpose()?;
-        let raw = ffi::kyrka_cathedral_cfg {
+        let raw = libkyrka_sys::kyrka_cathedral_cfg {
             kek: kek.as_ref().map_or(std::ptr::null(), |c| c.as_ptr()),
             cosk: cosk.as_ref().map_or(std::ptr::null(), |c| c.as_ptr()),
             secret: secret.as_ref().map_or(std::ptr::null(), |c| c.as_ptr()),

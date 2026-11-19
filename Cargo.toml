@@ -1,29 +1,3 @@
-[package]
-version = "0.1.0"
-exclude = ["binds_example.rs"] 
-
-name = "libkyrka"
-description = "Rust bindings for the libkyrka C library created by jorisvink, which is a networking cryptography library."
-homepage = "https://sanctorum.se/"
-repository = "https://github.com/a-rvid/libkyrka-rs"
-categories = ["cryptography", "network-programming", "api-bindings"]
-keywords = ["ffi", "cryptography", "bindings"]
-documentation = "https://docs.rs/libkyrka"
-readme = "README.md"
-links = "libkyrka"
-edition = "2024"
-license = "ISC"
-
-[lints.rust]
-unsafe_code = "allow"
-
-[dependencies]
-serde = { version = "1.0.229", features = ["derive"], optional = true }
-
-[build-dependencies]
-bindgen = "0.73"
-pkg-config = "0.3"
-
-[features]
-# Allows for serialization of data structures that might be used for configuration.
-serde = ["dep:serde"]
+[workspace]
+members = ["crates/libkyrka-sys", "crates/libkyrka"]
+resolver = "3" 

@@ -1,5 +1,4 @@
 use std::fmt;
-use crate::ffi;
 
 pub(crate) fn check(code: u32) -> Result<(), KyrkaError> {
     if code == 0 {
@@ -87,25 +86,25 @@ impl std::error::Error for KyrkaError {}
 impl KyrkaError {
     pub(crate) fn from_code(code: u32) -> Self {
         match code {
-            ffi::KYRKA_ERROR_NONE => KyrkaError::None,
-            ffi::KYRKA_ERROR_SYSTEM => KyrkaError::System,
-            ffi::KYRKA_ERROR_PARAMETER => KyrkaError::Parameter,
-            ffi::KYRKA_ERROR_NO_CONTEXT => KyrkaError::NoContext,
-            ffi::KYRKA_ERROR_NO_CALLBACK => KyrkaError::NoCallback,
-            ffi::KYRKA_ERROR_FILE_ERROR => KyrkaError::FileError,
-            ffi::KYRKA_ERROR_INTERNAL => KyrkaError::Internal,
-            ffi::KYRKA_ERROR_INTEGRITY => KyrkaError::Integrity,
-            ffi::KYRKA_ERROR_NO_TX_KEY => KyrkaError::NoTxKey,
-            ffi::KYRKA_ERROR_NO_RX_KEY => KyrkaError::NoRxKey,
-            ffi::KYRKA_ERROR_NO_KEK => KyrkaError::NoKek,
-            ffi::KYRKA_ERROR_NO_SECRET => KyrkaError::NoSecret,
-            ffi::KYRKA_ERROR_NO_CONFIG => KyrkaError::NoConfig,
-            ffi::KYRKA_ERROR_CATHEDRAL_CONFIG => KyrkaError::CathedralConfig,
-            ffi::KYRKA_ERROR_PACKET_ERROR => KyrkaError::PacketError,
-            ffi::KYRKA_ERROR_NO_COSK => KyrkaError::NoCosk,
-            ffi::KYRKA_ERROR_TIMEOUT => KyrkaError::Timeout,
-            ffi::KYRKA_ERROR_SHROUD_NO_KEYS => KyrkaError::ShroudNoKeys,
-            ffi::KYRKA_ERROR_MTU_SIZE => KyrkaError::MtuSize,
+            libkyrka_sys::KYRKA_ERROR_NONE => KyrkaError::None,
+            libkyrka_sys::KYRKA_ERROR_SYSTEM => KyrkaError::System,
+            libkyrka_sys::KYRKA_ERROR_PARAMETER => KyrkaError::Parameter,
+            libkyrka_sys::KYRKA_ERROR_NO_CONTEXT => KyrkaError::NoContext,
+            libkyrka_sys::KYRKA_ERROR_NO_CALLBACK => KyrkaError::NoCallback,
+            libkyrka_sys::KYRKA_ERROR_FILE_ERROR => KyrkaError::FileError,
+            libkyrka_sys::KYRKA_ERROR_INTERNAL => KyrkaError::Internal,
+            libkyrka_sys::KYRKA_ERROR_INTEGRITY => KyrkaError::Integrity,
+            libkyrka_sys::KYRKA_ERROR_NO_TX_KEY => KyrkaError::NoTxKey,
+            libkyrka_sys::KYRKA_ERROR_NO_RX_KEY => KyrkaError::NoRxKey,
+            libkyrka_sys::KYRKA_ERROR_NO_KEK => KyrkaError::NoKek,
+            libkyrka_sys::KYRKA_ERROR_NO_SECRET => KyrkaError::NoSecret,
+            libkyrka_sys::KYRKA_ERROR_NO_CONFIG => KyrkaError::NoConfig,
+            libkyrka_sys::KYRKA_ERROR_CATHEDRAL_CONFIG => KyrkaError::CathedralConfig,
+            libkyrka_sys::KYRKA_ERROR_PACKET_ERROR => KyrkaError::PacketError,
+            libkyrka_sys::KYRKA_ERROR_NO_COSK => KyrkaError::NoCosk,
+            libkyrka_sys::KYRKA_ERROR_TIMEOUT => KyrkaError::Timeout,
+            libkyrka_sys::KYRKA_ERROR_SHROUD_NO_KEYS => KyrkaError::ShroudNoKeys,
+            libkyrka_sys::KYRKA_ERROR_MTU_SIZE => KyrkaError::MtuSize,
             _ => KyrkaError::Unknown(code),
         }
     }

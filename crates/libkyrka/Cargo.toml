@@ -1,0 +1,24 @@
+[package]
+version = "0.1.0"
+
+name = "libkyrka"
+description = "Safe Rust bindings for the libkyrka C library created by jorisvink, which is a networking cryptography library."
+homepage = "https://sanctorum.se/"
+repository = "https://github.com/a-rvid/libkyrka-rs"
+categories = ["cryptography", "network-programming"]
+keywords = ["cryptography", "bindings"]
+documentation = "https://docs.rs/libkyrka"
+readme = "../../README.md"
+edition = "2024"
+license = "ISC"
+
+[lints.rust]
+unsafe_code = "allow"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }
+libkyrka-sys = { version = "0.1", path = "../libkyrka-sys" }
+
+[features]
+# Allows for serialization of data structures that might be used for configuration.
+serde = ["dep:serde"]
