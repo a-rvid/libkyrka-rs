@@ -32,4 +32,11 @@ To compile you may need to add /usr/local/share to PKG_CONFIG_PATH:
 export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 ```
 
+## Features
+
+* [serde](https://docs.rs/crate/serde/latest): 
+  allows for serialization of data structures that might be used for configuration.
+
+  Implements Serialize and Deserialize for some structs.
+
 [Documentation](https://docs.rs/libkyrka)
