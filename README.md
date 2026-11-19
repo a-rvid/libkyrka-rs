@@ -32,4 +32,4 @@ To compile you may need to add /usr/local/share to PKG_CONFIG_PATH:
 export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 ```
 
-[Docummentation](https://docs.rs/libkyrka)
+[Documentation](https://docs.rs/libkyrka)
