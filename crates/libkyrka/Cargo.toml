@@ -22,3 +22,5 @@ libkyrka-sys = { version = "0.1", path = "../libkyrka-sys" }
 [features]
 # Allows for serialization of data structures that might be used for configuration.
 serde = ["dep:serde"]
+# Makes configuration easier by adding for example Path entries to Config structures. Depends on serde feature
+config = ["serde"]
