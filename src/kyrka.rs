@@ -24,15 +24,15 @@ impl Kyrka {
     }
 
     /// Obtain the last error that in the KYRKA context.
-    pub fn last_error(&mut self) -> Result<KyrkaError, KyrkaError> {
-        Ok(KyrkaError::from_code(unsafe { ffi::kyrka_last_error(self.raw.as_ptr()) }))
+    pub fn last_error(&mut self) -> KyrkaError {
+        KyrkaError::from_code(unsafe { ffi::kyrka_last_error(self.raw.as_ptr()) })
     }
 
     /// Enable shroud on a context, cannot be turned off once enabled.
     pub fn enable_shroud(&mut self) -> Result<(), KyrkaError> {
         let ret = unsafe { ffi::kyrka_shroud_enable(self.raw.as_ptr()) as i32 };
         if ret != 0 {
-            self.last_error()?;
+            return Err(self.last_error()?);
         }
         Ok(())
     }
