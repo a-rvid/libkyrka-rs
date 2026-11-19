@@ -25,4 +25,5 @@ bindgen = "0.73"
 pkg-config = "0.3"
 
 [features]
+# Allows for serialization of data structures that might be used for configuration.
 serde = ["dep:serde"]
