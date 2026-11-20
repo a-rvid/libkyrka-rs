@@ -8,13 +8,23 @@ fn main() {
         return;
     }
 
-    let library = pkg_config::Config::new().probe("libkyrka").unwrap_or_else(|error| {
-        panic!("Failed to find libkyrka via pkg-config: {}\n\n
-        
-        Try setting the PKG_CONFIG_PATH environment variable to the directory containing libkyrka.pc (e.g. /usr/local/lib/pkgconfig).\n
-        If you haven't compiled libkyrka yet, you can do so by looking at https://github.com/a-rvid/libkyrka-rs/tree/main/crates/libkyrka-sys/",
-        error);
-    });
+    let library = pkg_config::Config::new()
+        .probe("libkyrka")
+        .unwrap_or_else(|error| {
+            panic!(
+                "Failed to find libkyrka via pkg-config: {error}\n\n\
+             Build and install the native libkyrka library first:\n\
+             git clone https://github.com/jorisvink/libkyrka.git\n\
+             cd libkyrka\n\
+             make\n\
+             sudo make install\n\n\
+             Then ensure pkg-config can find libkyrka.pc:\n\
+             export PKG_CONFIG_PATH=\"/usr/local/lib/pkgconfig:${{PKG_CONFIG_PATH:-}}\"\n\
+             pkg-config --modversion libkyrka\n\n\
+             If libkyrka was installed elsewhere, add that installation's\n\
+             lib/pkgconfig directory to PKG_CONFIG_PATH."
+            );
+        });
     let header = library
         .include_paths
         .iter()
@@ -26,7 +36,21 @@ fn main() {
                 .map(|dir| dir.join("libkyrka.h")),
         )
         .find(|path| path.exists())
-        .expect("pkg-config found libkyrka, but its header was not found");
+        .unwrap_or_else(|| {
+            panic!(
+                "pkg-config found libkyrka, but the libkyrka.h header was not found.\n\n\
+                 Reinstall libkyrka with its development headers:\n\
+                 git clone https://github.com/jorisvink/libkyrka.git\n\
+                 cd libkyrka\n\
+                 make\n\
+                 sudo make install\n\n\
+                 If libkyrka was installed outside /usr/local, add both:\n\
+                 export PKG_CONFIG_PATH=\"/your/prefix/lib/pkgconfig:${{PKG_CONFIG_PATH:-}}\"\n\
+                 export BINDGEN_EXTRA_CLANG_ARGS=\"-I/your/prefix/include\"\n\n\
+                 Verify the pkg-config package:\n\
+                 pkg-config --cflags --libs libkyrka"
+            )
+        });
 
     let mut builder = bindgen::Builder::default()
         .header(header.to_string_lossy())
