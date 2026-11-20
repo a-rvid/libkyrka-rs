@@ -1,6 +1,13 @@
 use std::path::PathBuf;
 
 fn main() {
+    let out = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR not set")).join("bindings.rs");
+
+    if std::env::var_os("DOCS_RS").is_some() {
+        std::fs::copy("binds_example.rs", &out).unwrap();
+        return;
+    }
+
     let library = pkg_config::Config::new().probe("libkyrka").expect(
         "Could not find libkyrka via pkg-config; set PKG_CONFIG_PATH to its .pc file directory",
     );
@@ -29,9 +36,7 @@ fn main() {
         .generate()
         .expect("Failed to generate libkyrka bindings");
 
-    let out_dir = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR not set"));
-
     bindings
-        .write_to_file(out_dir.join("bindings.rs"))
+        .write_to_file(&out)
         .expect("Failed to write bindings");
 }
