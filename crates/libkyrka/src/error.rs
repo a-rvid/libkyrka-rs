@@ -1,13 +1,5 @@
 use std::fmt;
 
-pub(crate) fn check(code: u32) -> Result<(), KyrkaError> {
-    if code == 0 {
-        Ok(())
-    } else {
-        Err(KyrkaError::from_code(code))
-    }
-}
-
 /// Errors that can occur within a `Kyrka` context.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KyrkaError {

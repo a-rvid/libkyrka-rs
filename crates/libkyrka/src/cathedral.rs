@@ -1,5 +1,6 @@
 use std::os::unix::ffi::OsStrExt;
 use std::{ffi::CString, path::PathBuf};
+use crate::packet::send_trampoline;
 
 /// Configuration structure for cathedrals
 #[derive(Debug, Clone)]
@@ -54,11 +55,7 @@ impl FfiCathedralCfg {
 }
 
 impl CathedralConfig {
-    pub(crate) fn to_ffi(
-        &self,
-        udata: *mut std::ffi::c_void,
-        send: unsafe extern "C" fn(*mut libkyrka_sys::kyrka_packet, u64, *mut std::ffi::c_void),
-    ) -> Result<FfiCathedralCfg, std::ffi::NulError> {
+    pub(crate) fn to_ffi(&self, udata: *mut std::ffi::c_void) -> Result<FfiCathedralCfg, std::ffi::NulError> {
         let kek = self
             .kek
             .as_ref()
@@ -87,7 +84,7 @@ impl CathedralConfig {
             hidden: i32::from(self.hidden),
             remembrance: i32::from(self.remembrance),
             udata,
-            send: Some(send),
+            send: Some(send_trampoline),
         };
 
         Ok(FfiCathedralCfg {

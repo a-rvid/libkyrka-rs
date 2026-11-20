@@ -19,6 +19,7 @@ pub mod cathedral;
 pub mod error;
 /// Provides the context and all user-facing functionality for managing the application.
 pub mod kyrka;
+pub(crate) mod packet;
 /// Prelude module for commonly used items.
 ///
 /// use libkyrka::prelude::*;
