@@ -1,4 +1,5 @@
 use crate::cathedral::CathedralConfig;
+use crate::constants::*;
 use crate::error::KyrkaError;
 use crate::packet::CallbackState;
 use std::error::Error;
@@ -103,7 +104,7 @@ impl Kyrka {
 
     /// Process pending events for a thread associated with this context. You must call this every event loop.
     pub fn event(&mut self) -> Result<(), KyrkaError> {
-        let ret = unsafe { libkyrka_sys::kyrka_key_manage(self.ctx.as_ptr()) as i32 };
+        let ret = unsafe { libkyrka_sys::kyrka_key_manage(self.ctx.as_ptr()) };
         if ret != 0 {
             return Err(self.last_error());
         }
@@ -113,6 +114,74 @@ impl Kyrka {
     /// Obtain the last error that in the KYRKA context.
     pub fn last_error(&mut self) -> KyrkaError {
         KyrkaError::from_code(unsafe { libkyrka_sys::kyrka_last_error(self.ctx.as_ptr()) })
+    }
+
+    /// The application thinks the peer timed out, so we erase all keys
+    ///
+    /// send an event back if we did so.
+    /// IMPORTANT: Not implemented.
+    pub fn peer_timeout(&mut self) -> Result<(), KyrkaError> {
+        let ret = unsafe { libkyrka_sys::kyrka_peer_timeout(self.ctx.as_ptr()) };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
+    }
+
+    /// Lets the context know if we are in an active p2p tunnel or if
+    /// we are perhaps being relayed.
+    ///
+    /// This is important when using shroud
+    /// so internally generated offers can be shrouded with the right key.
+    ///
+    /// If you get this wrong, at worst the receiving party will not be able
+    /// to unshroud the packet, but no meta-data is leaked.
+    ///
+    /// Do not use this function if you are using commixtion as commixtion
+    /// requires your packet to travel *through* the cathedrals.
+    pub fn p2p_active(&mut self, active: bool) -> Result<(), KyrkaError> {
+        let ret = unsafe { libkyrka_sys::kyrka_p2p_active(self.ctx.as_ptr(), active as i32) };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
+    }
+
+    /// Sets the device KEK secret directly by copying in the given secret.
+    ///
+    /// Only call this if you did not specify the kek in the `CathedralConfig`.
+    pub fn device_kek_load(&mut self, kek: [u8; KYRKA_KEY_LENGTH]) -> Result<(), KyrkaError> {
+        let ret = unsafe {
+            libkyrka_sys::kyrka_device_kek_load(
+                self.ctx.as_ptr(),
+                kek.as_ptr() as *const c_void,
+                kek.len(),
+            )
+        };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
+    }
+
+    /// Sets the cathedral offer signing key directly by copying in the given key.
+    ///
+    /// Only call this if you did not specify the signing key in the `CathedralConfig`.
+    pub fn cathedral_cosk_load(
+        &mut self,
+        key: [u8; KYRKA_ED25519_SIGN_SECRET_LENGTH],
+    ) -> Result<(), KyrkaError> {
+        let ret = unsafe {
+            libkyrka_sys::kyrka_cathedral_cosk_load(
+                self.ctx.as_ptr(),
+                key.as_ptr() as *const c_void,
+                key.len(),
+            )
+        };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
     }
 
     /// Configure the cathedral for the context.
@@ -125,7 +194,8 @@ impl Kyrka {
         let callback_state = self.callback_state.as_mut().unwrap();
         let udata = (&mut **callback_state) as *mut CallbackState as *mut c_void;
         let mut ffi = config.to_ffi(udata)?;
-        let ret = unsafe { libkyrka_sys::kyrka_cathedral_config(self.ctx.as_ptr(), ffi.as_mut_ptr()) as i32 };
+        let ret =
+            unsafe { libkyrka_sys::kyrka_cathedral_config(self.ctx.as_ptr(), ffi.as_mut_ptr()) };
         if ret != 0 {
             return Err(self.last_error().into());
         }
@@ -134,7 +204,7 @@ impl Kyrka {
 
     /// Enable shroud on a context, cannot be turned off once enabled.
     pub fn enable_shroud(&mut self) -> Result<(), KyrkaError> {
-        let ret = unsafe { libkyrka_sys::kyrka_shroud_enable(self.ctx.as_ptr()) as i32 };
+        let ret = unsafe { libkyrka_sys::kyrka_shroud_enable(self.ctx.as_ptr()) };
         if ret != 0 {
             return Err(self.last_error());
         }
@@ -145,7 +215,7 @@ impl Kyrka {
     ///
     /// This defines the largest packet size that can be transmitted over the tunnel.
     pub fn set_mtu(&mut self, mtu: u16) -> Result<(), KyrkaError> {
-        let ret = unsafe { libkyrka_sys::kyrka_mtu_size(self.ctx.as_ptr(), mtu) as i32 };
+        let ret = unsafe { libkyrka_sys::kyrka_mtu_size(self.ctx.as_ptr(), mtu) };
         if ret != 0 {
             return Err(self.last_error());
         }
@@ -162,7 +232,7 @@ impl Kyrka {
                 self.ctx.as_ptr(),
                 secret.as_ptr() as *const c_void,
                 secret.len(),
-            ) as i32
+            )
         };
         if ret != 0 {
             return Err(self.last_error());
@@ -181,7 +251,7 @@ impl Kyrka {
                 self.ctx.as_ptr(),
                 secret.as_ptr() as *const c_void,
                 secret.len(),
-            ) as i32
+            )
         };
         if ret != 0 {
             return Err(self.last_error());

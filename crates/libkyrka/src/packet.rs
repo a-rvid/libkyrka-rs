@@ -45,7 +45,7 @@ pub(crate) unsafe extern "C" fn send_trampoline(
     }
 
     let magic = Magic::try_from(magic).ok();
-    
+
     if let Some(magic) = magic {
         (state.send_fn)(&packet.data[..packet.length], magic);
     }

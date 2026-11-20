@@ -15,6 +15,7 @@ use std::ffi::CStr;
 ///
 /// Cathedrals manage the connection to a server that handles peer discovery, traffic relay and key distribution
 pub mod cathedral;
+pub(crate) mod constants;
 /// Error handling for libkyrka.
 pub mod error;
 /// Provides the context and all user-facing functionality for managing the application.
