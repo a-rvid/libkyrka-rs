@@ -1,5 +1,5 @@
 [package]
-version = "0.1.0"
+version = "0.1.1"
 
 name = "libkyrka"
 description = "Safe Rust bindings for the libkyrka C library created by jorisvink, which is a networking cryptography library."
