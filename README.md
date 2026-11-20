@@ -16,6 +16,7 @@ To use libkyrka-rs you need to install some dependencies:
 `libkyrka`:
 
 ```bash
+# sudo apt install build-essential pkg-config libsodium-dev # for Debian
 git clone https://github.com/jorisvink/libkyrka/
 cd libkyrka
 make

@@ -8,10 +8,13 @@ fn main() {
         return;
     }
 
-    let library = pkg_config::Config::new().probe("libkyrka").expect(
-        "Could not find libkyrka via pkg-config; set PKG_CONFIG_PATH to its .pc file directory",
-    );
-
+    let library = pkg_config::Config::new().probe("libkyrka").unwrap_or_else(|error| {
+        panic!("Failed to find libkyrka via pkg-config: {}\n\n
+        
+        Try setting the PKG_CONFIG_PATH environment variable to the directory containing libkyrka.pc (e.g. /usr/local/lib/pkgconfig).\n
+        If you haven't compiled libkyrka yet, you can do so by looking at https://github.com/a-rvid/libkyrka-rs/tree/main/crates/libkyrka-sys/",
+        error);
+    });
     let header = library
         .include_paths
         .iter()
