@@ -5,6 +5,7 @@ use crate::packet::CallbackState;
 use std::error::Error;
 use std::ffi::c_void;
 use std::ptr::NonNull;
+use std::path::PathBuf;
 
 /// A structure containing all data needed to run the application.
 pub struct Kyrka {
@@ -75,6 +76,8 @@ impl KyrkaConfig {
             mtu: self.mtu,
             secret: self.secret,
             cathedral_config: self.cathedral_config,
+            #[cfg(feature = "config")]
+            secret_path: self.secret_path,
         })
     }
 

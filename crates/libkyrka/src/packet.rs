@@ -18,12 +18,14 @@ impl TryFrom<u64> for Magic {
     }
 }
 
+pub(crate) type SendFn = dyn FnMut(&[u8], Magic);
+
 pub(crate) struct CallbackState {
-    send_fn: Box<dyn FnMut(&[u8], Magic)>,
+    send_fn: Box<SendFn>,
 }
 
 impl CallbackState {
-    pub(crate) fn new(send_fn: Box<dyn FnMut(&[u8], Magic)>) -> Self {
+    pub(crate) fn new(send_fn: Box<SendFn>) -> Self {
         Self { send_fn }
     }
 }
