@@ -1,5 +1,5 @@
 [package]
-version = "0.1.2"
+version = "0.1.3"
 
 name = "libkyrka-sys"
 description = "Raw bindings for the libkyrka C library created by jorisvink, which is a networking cryptography library."
