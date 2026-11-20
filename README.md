@@ -1,3 +1,5 @@
+**THIS PROJECT IS WORK IN PROGRESS AT THIS COMMIT AND SHOULD NOT BE USED AS 0.1.x!!**
+
 # libkyrka-rs
 
 Rust bindings for [libkyrka](https://github.com/jorisvink/libkyrka/). quote:
