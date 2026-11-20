@@ -25,7 +25,11 @@ fn main() {
         .find(|path| path.exists())
         .expect("pkg-config found libkyrka, but its header was not found");
 
-    let mut builder = bindgen::Builder::default().header(header.to_string_lossy());
+    let mut builder = bindgen::Builder::default().header(header.to_string_lossy())    
+        .allowlist_function("kyrka_.*")
+        .allowlist_type("kyrka.*|KYRKA")
+        .allowlist_var("KYRKA_.*")
+        .generate_comments(true);
 
     for path in &library.include_paths {
         builder = builder.clang_arg(format!("-I{}", path.display()));

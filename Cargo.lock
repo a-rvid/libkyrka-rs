@@ -84,7 +84,7 @@ dependencies = [
 
 [[package]]
 name = "libkyrka-sys"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "bindgen",
  "pkg-config",
