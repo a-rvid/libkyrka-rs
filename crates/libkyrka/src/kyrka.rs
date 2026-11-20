@@ -4,8 +4,9 @@ use crate::error::KyrkaError;
 use crate::packet::CallbackState;
 use std::error::Error;
 use std::ffi::c_void;
-use std::ptr::NonNull;
+#[cfg(feature = "config")]
 use std::path::PathBuf;
+use std::ptr::NonNull;
 
 /// A structure containing all data needed to run the application.
 pub struct Kyrka {
