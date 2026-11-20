@@ -8,7 +8,7 @@ pub(crate) type SendFn = dyn FnMut(&[u8], u64) + Send;
 
 /// A structure containing all data needed to run the application.
 pub struct Kyrka {
-    raw: NonNull<libkyrka_sys::KYRKA>,
+    ctx: NonNull<libkyrka_sys::KYRKA>,
     send_fn: Option<Box<SendFn>>,
 }
 
@@ -101,7 +101,6 @@ impl Kyrka {
         KyrkaConfigBuilder::default()
     }
 
-
     /// Allocate a new KYRKA context that will represent a single sanctum tunnel.
     pub fn new() -> Result<Kyrka, Box<dyn Error>> {
         let ctx = unsafe { libkyrka_sys::kyrka_ctx_alloc(None, std::ptr::null_mut()) };
@@ -109,9 +108,88 @@ impl Kyrka {
             return Err("Failed to allocate KYRKA context".into());
         }
         Ok(Kyrka {
-            raw: NonNull::new(ctx).ok_or_else(|| Box::new(KyrkaError::from_code(1)))?,
+            ctx: NonNull::new(ctx).ok_or_else(|| Box::new(KyrkaError::from_code(1)))?,
             send_fn: None,
         })
+    }
+
+    /// Process pending events for a thread associated with this context. You must call this every event loop.
+    pub fn event(&mut self) -> Result<(), KyrkaError> {
+        let ret = unsafe { libkyrka_sys::kyrka_key_manage(self.ctx.as_ptr()) as i32 };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
+    }
+
+    /// Obtain the last error that in the KYRKA context.
+    pub fn last_error(&mut self) -> KyrkaError {
+        KyrkaError::from_code(unsafe { libkyrka_sys::kyrka_last_error(self.ctx.as_ptr()) })
+    }
+
+    /// Configure the cathedral for the context.
+    ///
+    /// This sets up the cathedral with the provided configuration.
+    pub fn cathedral_config(&mut self, _config: CathedralConfig) -> Result<(), KyrkaError> {
+        todo!("Implement cathedral configuration loading")
+    }
+    pub(crate) fn kyrka_heaven_ifc(&mut self, )
+
+    /// Enable shroud on a context, cannot be turned off once enabled.
+    pub fn enable_shroud(&mut self) -> Result<(), KyrkaError> {
+        let ret = unsafe { libkyrka_sys::kyrka_shroud_enable(self.ctx.as_ptr()) as i32 };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
+    }
+
+    /// Set the Maximum Transmission Unit (MTU) size for the context.
+    ///
+    /// This defines the largest packet size that can be transmitted over the tunnel.
+    pub fn set_mtu(&mut self, mtu: u16) -> Result<(), KyrkaError> {
+        let ret = unsafe { libkyrka_sys::kyrka_mtu_size(self.ctx.as_ptr(), mtu) as i32 };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
+    }
+
+    /// Set the shared secret directly by copying in the given secret.
+    ///
+    /// This is not required for cathedral setups as the shared secret comes
+    /// from the cathedral in ambry form.
+    pub fn secret_load(&mut self, secret: [u8; 32]) -> Result<(), KyrkaError> {
+        let ret = unsafe {
+            libkyrka_sys::kyrka_secret_load(
+                self.ctx.as_ptr(),
+                secret.as_ptr() as *const c_void,
+                secret.len(),
+            ) as i32
+        };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
+    }
+
+    /// Sets the cathedral secret directly by copying in the given secret.
+    ///
+    /// Only call this if you did not specify the secret in the `KyrkaCathedralCfg`
+    /// data structure when calling `kyrka_cathedral_config()` or did not call
+    /// `kyrka_vicar_load()`.
+    pub fn cathedral_secret_load(&mut self, secret: [u8; 32]) -> Result<(), KyrkaError> {
+        let ret = unsafe {
+            libkyrka_sys::kyrka_cathedral_secret_load(
+                self.ctx.as_ptr(),
+                secret.as_ptr() as *const c_void,
+                secret.len(),
+            ) as i32
+        };
+        if ret != 0 {
+            return Err(self.last_error());
+        }
+        Ok(())
     }
 
     /// Load a KYRKA context and configure it based on the provided `KyrkaConfig`.
@@ -138,80 +216,11 @@ impl Kyrka {
         }
         Ok(ctx)
     }
-
-    /// Obtain the last error that in the KYRKA context.
-    pub fn last_error(&mut self) -> KyrkaError {
-        KyrkaError::from_code(unsafe { libkyrka_sys::kyrka_last_error(self.raw.as_ptr()) })
-    }
-
-    /// Configure the cathedral for the context.
-    ///
-    /// This sets up the cathedral with the provided configuration.
-    pub fn cathedral_config(&mut self, _config: CathedralConfig) -> Result<(), KyrkaError> {
-        todo!("Implement cathedral configuration loading")
-    }
-
-    /// Enable shroud on a context, cannot be turned off once enabled.
-    pub fn enable_shroud(&mut self) -> Result<(), KyrkaError> {
-        let ret = unsafe { libkyrka_sys::kyrka_shroud_enable(self.raw.as_ptr()) as i32 };
-        if ret != 0 {
-            return Err(self.last_error());
-        }
-        Ok(())
-    }
-
-    /// Set the Maximum Transmission Unit (MTU) size for the context.
-    ///
-    /// This defines the largest packet size that can be transmitted over the tunnel.
-    pub fn set_mtu(&mut self, mtu: u16) -> Result<(), KyrkaError> {
-        let ret = unsafe { libkyrka_sys::kyrka_mtu_size(self.raw.as_ptr(), mtu) as i32 };
-        if ret != 0 {
-            return Err(self.last_error());
-        }
-        Ok(())
-    }
-
-    /// Set the shared secret directly by copying in the given secret.
-    ///
-    /// This is not required for cathedral setups as the shared secret comes
-    /// from the cathedral in ambry form.
-    pub fn secret_load(&mut self, secret: [u8; 32]) -> Result<(), KyrkaError> {
-        let ret = unsafe {
-            libkyrka_sys::kyrka_secret_load(
-                self.raw.as_ptr(),
-                secret.as_ptr() as *const c_void,
-                secret.len(),
-            ) as i32
-        };
-        if ret != 0 {
-            return Err(self.last_error());
-        }
-        Ok(())
-    }
-
-    /// Sets the cathedral secret directly by copying in the given secret.
-    ///
-    /// Only call this if you did not specify the secret in the `KyrkaCathedralCfg`
-    /// data structure when calling `kyrka_cathedral_config()` or did not call
-    /// `kyrka_vicar_load()`.
-    pub fn cathedral_secret_load(&mut self, secret: [u8; 32]) -> Result<(), KyrkaError> {
-        let ret = unsafe {
-            libkyrka_sys::kyrka_cathedral_secret_load(
-                self.raw.as_ptr(),
-                secret.as_ptr() as *const c_void,
-                secret.len(),
-            ) as i32
-        };
-        if ret != 0 {
-            return Err(self.last_error());
-        }
-        Ok(())
-    }
 }
 
 impl Drop for Kyrka {
     /// Zeroizes and frees the `Kyrka` context.
     fn drop(&mut self) {
-        unsafe { libkyrka_sys::kyrka_ctx_free(self.raw.as_ptr()) }
+        unsafe { libkyrka_sys::kyrka_ctx_free(self.ctx.as_ptr()) }
     }
 }

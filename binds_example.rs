@@ -886,7 +886,6 @@ unsafe extern "C" {
 unsafe extern "C" {
     pub fn kyrka_ctx_free(arg1: *mut KYRKA);
 }
-/// TODO
 unsafe extern "C" {
     pub fn kyrka_peer_timeout(arg1: *mut KYRKA) -> ::std::os::raw::c_int;
 }
@@ -919,11 +918,9 @@ unsafe extern "C" {
         >,
     );
 }
-/// TODO???
 unsafe extern "C" {
     pub fn kyrka_key_manage(arg1: *mut KYRKA) -> ::std::os::raw::c_int;
 }
-/// TODO
 unsafe extern "C" {
     pub fn kyrka_mtu_size(arg1: *mut KYRKA, arg2: u_int16_t) -> ::std::os::raw::c_int;
 }
