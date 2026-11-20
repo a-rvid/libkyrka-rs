@@ -1,3 +1,5 @@
+**THIS PROJECT IS WORK IN PROGRESS AT THIS COMMIT AND SHOULD NOT BE USED AS 0.1.x!!**
+
 Raw FFI bindings for the jorisvink library. You are probably looking for the safe library, **[libkyrka](https://crates.io/crates/libkyrka)**.
 
 ## Building `libkyrka`
