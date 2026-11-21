@@ -1,12 +1,14 @@
+use std::ffi::NulError;
 use std::fmt;
 use std::io;
-use std::ffi::NulError;
 
 /// Errors that can occur near the `Kyrka` structure.
 #[derive(Debug)]
 pub enum KyrkaError {
     /// Native errors returned by the underlying C KYRKA library.
     Native(KyrkaNativeError),
+    /// Cathedral configuration errors.
+    Cathedral(CathedralError),
     /// I/O operation errors.
     Io(io::Error),
     /// `std::ffi::NulError` errors.
@@ -41,13 +43,25 @@ impl From<NulError> for KyrkaError {
     }
 }
 
+impl From<CathedralError> for KyrkaError {
+    fn from(err: CathedralError) -> Self {
+        KyrkaError::Cathedral(err)
+    }
+}
+
 impl fmt::Display for KyrkaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             KyrkaError::Native(err) => write!(f, "Native error: {}", err),
+            KyrkaError::Cathedral(err) => write!(f, "Cathedral error: {}", err),
             KyrkaError::Io(err) => write!(f, "IO error: {}", err),
             KyrkaError::InvalidSecretLength(len) => write!(f, "Invalid secret length: {}", len),
-            KyrkaError::InvalidMtuSize(mtu) => write!(f, "Invalid MTU size (maximum {}): {}", libkyrka_sys::KYRKA_PACKET_DATA_LEN, mtu),
+            KyrkaError::InvalidMtuSize(mtu) => write!(
+                f,
+                "Invalid MTU size (maximum {}): {}",
+                libkyrka_sys::KYRKA_PACKET_DATA_LEN,
+                mtu
+            ),
             KyrkaError::ErasedContext => write!(f, "Context has been erased."),
             KyrkaError::AllocFailed(msg) => write!(f, "Allocation failed: {}", msg),
             KyrkaError::MtuRequired => write!(f, "MTU is required."),
@@ -60,6 +74,7 @@ impl std::error::Error for KyrkaError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             KyrkaError::Native(error) => Some(error),
+            KyrkaError::Cathedral(error) => Some(error),
             KyrkaError::Io(error) => Some(error),
             KyrkaError::NulError(error) => Some(error),
             _ => None,
@@ -71,6 +86,7 @@ impl PartialEq for KyrkaError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Native(a), Self::Native(b)) => a == b,
+            (Self::Cathedral(a), Self::Cathedral(b)) => cathedral_error_eq(a, b),
             (Self::Io(a), Self::Io(b)) => {
                 a.kind() == b.kind()
                     && a.raw_os_error() == b.raw_os_error()
@@ -88,6 +104,26 @@ impl PartialEq for KyrkaError {
 }
 
 impl Eq for KyrkaError {}
+
+fn cathedral_error_eq(a: &CathedralError, b: &CathedralError) -> bool {
+    match (a, b) {
+        (CathedralError::InvalidKekSize, CathedralError::InvalidKekSize)
+        | (CathedralError::KekNotFound, CathedralError::KekNotFound)
+        | (CathedralError::InvalidCoskSize, CathedralError::InvalidCoskSize)
+        | (CathedralError::CoskNotFound, CathedralError::CoskNotFound)
+        | (CathedralError::InvalidSecretSize, CathedralError::InvalidSecretSize)
+        | (CathedralError::SecretNotFound, CathedralError::SecretNotFound)
+        | (CathedralError::FlockDstZero, CathedralError::FlockDstZero)
+        | (CathedralError::IdentityZero, CathedralError::IdentityZero) => true,
+        (CathedralError::InvalidHops(a), CathedralError::InvalidHops(b)) => a == b,
+        (CathedralError::Io(a), CathedralError::Io(b)) => {
+            a.kind() == b.kind()
+                && a.raw_os_error() == b.raw_os_error()
+                && a.to_string() == b.to_string()
+        }
+        _ => false,
+    }
+}
 
 /// Errors from the underlying C KYRKA library.
 #[derive(Debug, Eq, PartialEq)]
@@ -119,7 +155,7 @@ pub enum KyrkaNativeError {
     /// KYRKA_ERROR_NO_CONFIG
     NoConfig,
     /// KYRKA_ERROR_CATHEDRAL_CONFIG
-    CathedralConfig,
+    Cathedral,
     /// KYRKA_ERROR_PACKET_ERROR
     PacketError,
     /// KYRKA_ERROR_NO_COSK
@@ -151,7 +187,7 @@ impl fmt::Display for KyrkaNativeError {
             KyrkaNativeError::NoKek => write!(f, "No KEK Secret."),
             KyrkaNativeError::NoSecret => write!(f, "No secret error."),
             KyrkaNativeError::NoConfig => write!(f, "No config error."),
-            KyrkaNativeError::CathedralConfig => write!(f, "Cathedral config error."),
+            KyrkaNativeError::Cathedral => write!(f, "Cathedral config error."),
             KyrkaNativeError::PacketError => write!(f, "Packet error."),
             KyrkaNativeError::NoCosk => write!(f, "No COSK error."),
             KyrkaNativeError::Timeout => write!(f, "Timeout error."),
@@ -180,13 +216,70 @@ impl KyrkaNativeError {
             libkyrka_sys::KYRKA_ERROR_NO_KEK => KyrkaNativeError::NoKek,
             libkyrka_sys::KYRKA_ERROR_NO_SECRET => KyrkaNativeError::NoSecret,
             libkyrka_sys::KYRKA_ERROR_NO_CONFIG => KyrkaNativeError::NoConfig,
-            libkyrka_sys::KYRKA_ERROR_CATHEDRAL_CONFIG => KyrkaNativeError::CathedralConfig,
+            libkyrka_sys::KYRKA_ERROR_CATHEDRAL_CONFIG => KyrkaNativeError::Cathedral,
             libkyrka_sys::KYRKA_ERROR_PACKET_ERROR => KyrkaNativeError::PacketError,
             libkyrka_sys::KYRKA_ERROR_NO_COSK => KyrkaNativeError::NoCosk,
             libkyrka_sys::KYRKA_ERROR_TIMEOUT => KyrkaNativeError::Timeout,
             libkyrka_sys::KYRKA_ERROR_SHROUD_NO_KEYS => KyrkaNativeError::ShroudNoKeys,
             libkyrka_sys::KYRKA_ERROR_MTU_SIZE => KyrkaNativeError::MtuSize,
             _ => KyrkaNativeError::Unknown(code),
+        }
+    }
+}
+
+/// Errors that can occur while validating a cathedral configuration.
+#[derive(Debug)]
+pub enum CathedralError {
+    /// The KEK file does not contain exactly 32 bytes.
+    InvalidKekSize,
+    /// The configured KEK file could not be found.
+    KekNotFound,
+    /// The COSK file does not contain exactly 64 bytes.
+    InvalidCoskSize,
+    /// The configured COSK file could not be found.
+    CoskNotFound,
+    /// The secret file does not contain exactly 32 bytes.
+    InvalidSecretSize,
+    /// The configured secret file could not be found.
+    SecretNotFound,
+    /// The configured hop count is outside the supported range.
+    InvalidHops(u8),
+    /// The cathedral flock destination is zero.
+    FlockDstZero,
+    /// The cathedral identity is zero.
+    IdentityZero,
+    /// A filesystem operation failed.
+    Io(io::Error),
+}
+
+impl From<io::Error> for CathedralError {
+    fn from(err: io::Error) -> Self {
+        CathedralError::Io(err)
+    }
+}
+
+impl std::fmt::Display for CathedralError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CathedralError::InvalidKekSize => write!(f, "Invalid KEK size."),
+            CathedralError::InvalidCoskSize => write!(f, "Invalid COSK size."),
+            CathedralError::InvalidSecretSize => write!(f, "Invalid secret size."),
+            CathedralError::InvalidHops(hops) => write!(f, "Invalid hops error: {}", hops),
+            CathedralError::FlockDstZero => write!(f, "Flock destination must be nonzero."),
+            CathedralError::IdentityZero => write!(f, "Identity must be nonzero."),
+            CathedralError::SecretNotFound => write!(f, "Secret not found."),
+            CathedralError::KekNotFound => write!(f, "KEK not found."),
+            CathedralError::CoskNotFound => write!(f, "COSK not found."),
+            CathedralError::Io(err) => write!(f, "IO error: {}", err),
+        }
+    }
+}
+
+impl std::error::Error for CathedralError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            CathedralError::Io(error) => Some(error),
+            _ => None,
         }
     }
 }

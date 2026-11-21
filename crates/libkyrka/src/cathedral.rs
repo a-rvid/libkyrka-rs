@@ -1,4 +1,7 @@
+use crate::error::CathedralError;
 use crate::packet::send_trampoline;
+use std::fs;
+use std::io::ErrorKind;
 use std::os::unix::ffi::OsStrExt;
 use std::{ffi::CString, path::PathBuf};
 
@@ -6,11 +9,11 @@ use std::{ffi::CString, path::PathBuf};
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CathedralConfig {
-    /// Path to the KEK file.
+    /// Path to the KEK file. 32 bytes expected.
     pub kek: Option<PathBuf>,
-    /// Path to the COSK file.
+    /// Path to the COSK file. 64 bytes expected.
     pub cosk: Option<PathBuf>,
-    /// Path to the secret file.
+    /// Path to the secret file. 32 bytes expected.
     pub secret: Option<PathBuf>,
     /// flock source identifier.
     ///
@@ -55,6 +58,39 @@ impl FfiCathedralCfg {
 }
 
 impl CathedralConfig {
+    /// Validate key-file lengths and required cathedral identifiers.
+    pub fn validate(&self) -> Result<(), CathedralError> {
+        validate_key_file(
+            &self.kek,
+            32,
+            CathedralError::KekNotFound,
+            CathedralError::InvalidKekSize,
+        )?;
+        validate_key_file(
+            &self.cosk,
+            64,
+            CathedralError::CoskNotFound,
+            CathedralError::InvalidCoskSize,
+        )?;
+        validate_key_file(
+            &self.secret,
+            32,
+            CathedralError::SecretNotFound,
+            CathedralError::InvalidSecretSize,
+        )?;
+
+        if self.hops > 3 {
+            return Err(CathedralError::InvalidHops(self.hops));
+        }
+        if self.flock_dst == 0 {
+            return Err(CathedralError::FlockDstZero);
+        }
+        if self.identity == 0 {
+            return Err(CathedralError::IdentityZero);
+        }
+
+        Ok(())
+    }
     pub(crate) fn to_ffi(
         &self,
         udata: *mut std::ffi::c_void,
@@ -96,5 +132,23 @@ impl CathedralConfig {
             _cosk: cosk,
             _secret: secret,
         })
+    }
+}
+
+fn validate_key_file(
+    path: &Option<PathBuf>,
+    expected_len: u64,
+    not_found: CathedralError,
+    invalid_size: CathedralError,
+) -> Result<(), CathedralError> {
+    let Some(path) = path else {
+        return Ok(());
+    };
+
+    match fs::metadata(path) {
+        Ok(metadata) if metadata.len() == expected_len => Ok(()),
+        Ok(_) => Err(invalid_size),
+        Err(error) if error.kind() == ErrorKind::NotFound => Err(not_found),
+        Err(error) => Err(CathedralError::Io(error)),
     }
 }

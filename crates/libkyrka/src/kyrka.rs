@@ -1,9 +1,9 @@
 use crate::cathedral::CathedralConfig;
 use crate::constants::*;
 use crate::error::KyrkaError::{self};
+use crate::error::KyrkaNativeError;
 use crate::packet::CallbackState;
 use std::ffi::c_void;
-use crate::error::KyrkaNativeError;
 #[cfg(feature = "config")]
 use std::path::PathBuf;
 use std::ptr::NonNull;
@@ -99,13 +99,15 @@ impl Kyrka {
     }
 
     /// Allocate a new KYRKA context that will represent a single sanctum tunnel.
-    pub fn new() -> Result<Kyrka, KyrkaError>{
+    pub fn new() -> Result<Kyrka, KyrkaError> {
         if crate::EMERGENCY_ERASED.load(std::sync::atomic::Ordering::SeqCst) {
             return Err(KyrkaError::ErasedContext);
         }
         let ctx = unsafe { libkyrka_sys::kyrka_ctx_alloc(None, std::ptr::null_mut()) };
         Ok(Kyrka {
-            ctx: NonNull::new(ctx).ok_or_else(|| KyrkaError::AllocFailed("Failed to allocate KYRKA context".into()))?,
+            ctx: NonNull::new(ctx).ok_or_else(|| {
+                KyrkaError::AllocFailed("Failed to allocate KYRKA context".into())
+            })?,
             callback_state: None,
         })
     }
@@ -125,7 +127,8 @@ impl Kyrka {
         if crate::EMERGENCY_ERASED.load(std::sync::atomic::Ordering::SeqCst) {
             return KyrkaError::ErasedContext;
         }
-        KyrkaNativeError::from_code(unsafe { libkyrka_sys::kyrka_last_error(self.ctx.as_ptr()) }).into()
+        KyrkaNativeError::from_code(unsafe { libkyrka_sys::kyrka_last_error(self.ctx.as_ptr()) })
+            .into()
     }
 
     /// The application thinks the peer timed out, so we erase all keys
@@ -205,6 +208,7 @@ impl Kyrka {
     /// This sets up the cathedral with the provided configuration.
     pub fn cathedral_config(&mut self, config: CathedralConfig) -> Result<(), KyrkaError> {
         self.ensure_active()?;
+        config.validate()?;
         if self.callback_state.is_none() {
             self.callback_state = Some(Box::new(CallbackState::new(Box::new(|_data, _magic| {}))));
         }
@@ -293,7 +297,12 @@ impl Kyrka {
             #[cfg(feature = "config")]
             if let Some(secret_path) = config.secret_path {
                 let secret = std::fs::read(secret_path)?;
-                ctx.secret_load(secret.as_slice().try_into().map_err(|_| KyrkaError::InvalidSecretLength(secret.len()))?)?;
+                ctx.secret_load(
+                    secret
+                        .as_slice()
+                        .try_into()
+                        .map_err(|_| KyrkaError::InvalidSecretLength(secret.len()))?,
+                )?;
             }
         }
         if let Some(cathedral_config) = config.cathedral_config {
