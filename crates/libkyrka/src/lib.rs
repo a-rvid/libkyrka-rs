@@ -11,6 +11,10 @@
 compile_error!("Unsupported kernel. Only Linux and OpenBSD are supported by libkyrka.");
 
 use std::ffi::CStr;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+pub(crate) static EMERGENCY_ERASED: AtomicBool = AtomicBool::new(false);
+
 /// Provides configuration forcathedrals
 ///
 /// Cathedrals manage the connection to a server that handles peer discovery, traffic relay and key distribution
@@ -44,5 +48,15 @@ pub fn kyrka_version() -> String {
 /// Ideally you call this from an error handler in your code when you are
 /// going to exit or abort due to a panic.
 pub fn kyrka_emergency_erase() {
+    EMERGENCY_ERASED.store(true, Ordering::SeqCst);
     unsafe { libkyrka_sys::kyrka_emergency_erase() }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn emergency_erase_sets_flag() {
+        crate::kyrka_emergency_erase();
+        assert!(crate::EMERGENCY_ERASED.load(std::sync::atomic::Ordering::SeqCst));
+    }
 }
