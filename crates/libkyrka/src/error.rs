@@ -80,7 +80,7 @@ impl PartialEq for KyrkaError {
 
 impl Eq for KyrkaError {}
 
-/// Errors that can occur within a `Kyrka` context.
+/// Errors from the underlying C KYRKA library.
 #[derive(Debug, Eq, PartialEq)]
 pub enum KyrkaNativeError {
     /// KYRKA_ERROR_NONE
