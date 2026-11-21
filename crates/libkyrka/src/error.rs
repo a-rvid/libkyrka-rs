@@ -56,7 +56,16 @@ impl fmt::Display for KyrkaError {
     }
 }
 
-impl std::error::Error for KyrkaError {}
+impl std::error::Error for KyrkaError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            KyrkaError::Native(error) => Some(error),
+            KyrkaError::Io(error) => Some(error),
+            KyrkaError::NulError(error) => Some(error),
+            _ => None,
+        }
+    }
+}
 
 impl PartialEq for KyrkaError {
     fn eq(&self, other: &Self) -> bool {
